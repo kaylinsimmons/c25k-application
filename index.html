@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#0f766e" />
+  <meta name="theme-color" content="#8bc48a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="description" content="Kaylin and Mom's Couch to 5K run tracker with timed intervals, audio cues, GPS, and Apple Music" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
   <title>Kaylin and Moms Running App</title>
 </head>
 <body>
@@ -23,40 +22,83 @@
     <main class="app-main">
       <!-- Home -->
       <section id="view-home" class="view active">
-        <div class="home-background" id="home-background" aria-hidden="true"></div>
-        <div class="home-content">
-        <button type="button" class="home-photo-btn" id="btn-change-photo" title="Change home photo">
-          📷 Change photo
-        </button>
-        <input type="file" id="home-photo-input" accept="image/*" hidden />
-
         <div class="stats-bar" id="progress-summary">0 of 27 workouts complete</div>
 
-        <div class="music-card" id="music-card">
-          <div class="music-card-header">
-            <span class="music-card-icon">🎵</span>
+        <div class="family-card" id="family-card">
+          <div class="family-card-header">
+            <span class="family-card-icon">👟</span>
             <div>
-              <strong>Apple Music</strong>
-              <p class="music-card-sub" id="music-status">Play your music during runs</p>
+              <strong>Accountability Buddy</strong>
+              <p class="family-card-sub" id="family-status">See each other's runs</p>
             </div>
-            <label class="toggle">
-              <input type="checkbox" id="music-enabled" />
+          </div>
+          <div id="family-setup" class="family-setup">
+            <p class="family-card-sub">Who are you?</p>
+            <div class="family-setup-row">
+              <button type="button" class="family-name-btn" data-name="kaylin">Kaylin</button>
+              <button type="button" class="family-name-btn" data-name="mom">Mom</button>
+            </div>
+            <input
+              type="text"
+              class="family-input"
+              id="family-code"
+              placeholder="Family code (same on both phones)"
+              maxlength="32"
+            />
+            <button type="button" class="btn btn-primary btn-small" id="btn-family-save">Save &amp; Sync</button>
+            <p class="family-hint" id="family-hint"></p>
+          </div>
+          <div id="family-partner" hidden>
+            <div class="partner-summary">
+              <div class="partner-stat">
+                <span class="partner-stat-label" id="partner-you-label">You</span>
+                <span class="partner-stat-value" id="partner-you-count">0</span>
+              </div>
+              <div class="partner-stat">
+                <span class="partner-stat-label" id="partner-them-label">Mom</span>
+                <span class="partner-stat-value" id="partner-them-count">0</span>
+              </div>
+            </div>
+            <p class="partner-runs-title" id="partner-runs-title">Mom's recent runs</p>
+            <div id="partner-runs" class="card-list"></div>
+          </div>
+        </div>
+
+        <div class="music-card" id="music-card">
+          <div class="music-card-top">
+            <label class="toggle" title="Open playlist when a run starts">
+              <input type="checkbox" id="music-enabled" checked />
               <span class="toggle-slider"></span>
             </label>
+            <span class="music-auto-label">Auto-open on run</span>
           </div>
-          <div class="music-card-actions" id="music-actions">
-            <button type="button" class="btn btn-secondary btn-small" id="btn-music-connect">Connect Apple Music</button>
-            <button type="button" class="btn btn-text btn-small" id="btn-music-open">Open Apple Music</button>
-          </div>
-          <select class="music-playlist-select" id="music-playlist" hidden>
-            <option value="">Choose a playlist…</option>
-          </select>
-          <input
-            type="url"
-            class="music-url-input"
-            id="music-playlist-url"
-            placeholder="Or paste an Apple Music playlist link"
-          />
+          <a
+            class="apple-playlist-link"
+            id="apple-playlist-link"
+            href="https://music.apple.com/us/playlist/2024-running/pl.u-06oxmmytX7ooZK"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              class="apple-playlist-art"
+              id="apple-playlist-art"
+              src=""
+              alt="2024 Running playlist artwork"
+              width="72"
+              height="72"
+            />
+            <span class="apple-playlist-info">
+              <span class="apple-playlist-badge">
+                <svg class="apple-music-logo" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                </svg>
+                Apple Music
+              </span>
+              <span class="apple-playlist-name" id="apple-playlist-name">2024 Running</span>
+              <span class="apple-playlist-sub" id="apple-playlist-sub">Tap to open playlist</span>
+            </span>
+            <span class="apple-playlist-play" aria-hidden="true">▶</span>
+          </a>
         </div>
 
         <button class="next-workout-card" id="next-workout-card">
@@ -69,12 +111,12 @@
 
         <h2 class="section-title">Recent Runs</h2>
         <div id="workout-list" class="card-list"></div>
-        </div>
       </section>
 
       <!-- Active Workout -->
       <section id="view-workout" class="view">
         <h2 id="workout-title" class="workout-title">Week 1 · Day 1</h2>
+        <p class="workout-save-hint" id="workout-save-hint"></p>
 
         <div class="timer-ring-container">
           <svg class="timer-ring" viewBox="0 0 200 200">
@@ -104,6 +146,7 @@
           <button class="btn btn-icon" id="btn-audio" title="Toggle audio">🔊</button>
           <button class="btn btn-primary btn-large" id="btn-start">Start</button>
           <button class="btn btn-secondary" id="btn-pause" disabled>Pause</button>
+          <button class="btn btn-save" id="btn-save" disabled>Save</button>
           <button class="btn btn-danger" id="btn-stop" disabled>End</button>
         </div>
       </section>
@@ -124,6 +167,12 @@
         <div id="program-grid" class="program-grid"></div>
       </section>
     </main>
+
+    <button type="button" class="workout-banner" id="workout-banner" hidden>
+      <span class="workout-banner-phase" id="workout-banner-phase">Run</span>
+      <span class="workout-banner-time" id="workout-banner-time">0:00</span>
+      <span class="workout-banner-cta">Workout in progress · Tap to return</span>
+    </button>
 
     <nav class="bottom-nav">
       <button class="nav-btn active" data-nav="home">

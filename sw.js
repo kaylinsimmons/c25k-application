@@ -1,4 +1,4 @@
-const CACHE = 'c25k-v3';
+const CACHE = 'c25k-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -11,8 +11,9 @@ const ASSETS = [
   './js/gps.js',
   './js/music.js',
   './js/music-config.js',
+  './js/family-sync.js',
+  './js/firebase-config.js',
   './manifest.json',
-  './images/kaylin-and-mom.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
 ];

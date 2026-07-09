@@ -5,11 +5,13 @@ import {
   workoutId,
   getNextWorkout,
 } from './program.js';
-import { loadProgress, saveProgress, loadHistory, saveRun, loadHomeBackground, saveHomeBackground } from './storage.js';
+import { loadProgress, saveProgress, loadHistory, saveRun } from './storage.js';
 import { WorkoutTimer } from './timer.js';
 import { GpsTracker, formatDistance } from './gps.js';
 import * as audio from './audio.js';
 import * as music from './music.js';
+import * as familySync from './family-sync.js';
+import { isFirebaseConfigured } from './firebase-config.js';
 
 // --- DOM refs ---
 const views = {
@@ -35,20 +37,32 @@ const els = {
   intervalText: document.getElementById('interval-text'),
   distanceDisplay: document.getElementById('distance-display'),
   workoutTitle: document.getElementById('workout-title'),
+  workoutSaveHint: document.getElementById('workout-save-hint'),
   btnStart: document.getElementById('btn-start'),
   btnPause: document.getElementById('btn-pause'),
+  btnSave: document.getElementById('btn-save'),
   btnStop: document.getElementById('btn-stop'),
   btnAudio: document.getElementById('btn-audio'),
   ringProgress: document.getElementById('ring-progress'),
-  homeBackground: document.getElementById('home-background'),
-  btnChangePhoto: document.getElementById('btn-change-photo'),
-  homePhotoInput: document.getElementById('home-photo-input'),
   musicEnabled: document.getElementById('music-enabled'),
-  musicStatus: document.getElementById('music-status'),
-  btnMusicConnect: document.getElementById('btn-music-connect'),
-  btnMusicOpen: document.getElementById('btn-music-open'),
-  musicPlaylist: document.getElementById('music-playlist'),
-  musicPlaylistUrl: document.getElementById('music-playlist-url'),
+  applePlaylistArt: document.getElementById('apple-playlist-art'),
+  applePlaylistName: document.getElementById('apple-playlist-name'),
+  applePlaylistSub: document.getElementById('apple-playlist-sub'),
+  applePlaylistLink: document.getElementById('apple-playlist-link'),
+  workoutBanner: document.getElementById('workout-banner'),
+  workoutBannerPhase: document.getElementById('workout-banner-phase'),
+  workoutBannerTime: document.getElementById('workout-banner-time'),
+  familySetup: document.getElementById('family-setup'),
+  familyPartner: document.getElementById('family-partner'),
+  familyCode: document.getElementById('family-code'),
+  familyHint: document.getElementById('family-hint'),
+  familyStatus: document.getElementById('family-status'),
+  partnerYouLabel: document.getElementById('partner-you-label'),
+  partnerThemLabel: document.getElementById('partner-them-label'),
+  partnerYouCount: document.getElementById('partner-you-count'),
+  partnerThemCount: document.getElementById('partner-them-count'),
+  partnerRunsTitle: document.getElementById('partner-runs-title'),
+  partnerRuns: document.getElementById('partner-runs'),
 };
 
 let progress = loadProgress();
@@ -56,6 +70,34 @@ let timer = null;
 let gps = new GpsTracker();
 let activeWorkout = null;
 let runStartTime = null;
+let workoutSavedThisSession = false;
+let partnerData = familySync.loadPartnerCache();
+let wakeLock = null;
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+      });
+    }
+  } catch {
+    // Wake lock may be unavailable
+  }
+}
+
+function releaseWakeLock() {
+  wakeLock?.release?.();
+  wakeLock = null;
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && timer?.isRunning()) {
+    timer.syncFromClock();
+    requestWakeLock();
+  }
+});
 
 // --- Navigation ---
 document.querySelectorAll('[data-nav]').forEach((btn) => {
@@ -73,6 +115,24 @@ function showView(name) {
   if (name === 'program') renderProgram();
   if (name === 'home') renderHome();
   if (name === 'workout') ensureWorkoutReady();
+
+  updateWorkoutBanner(name);
+}
+
+function updateWorkoutBanner(currentView = null) {
+  const active = timer?.isActive() && !timer?.isComplete();
+  const onWorkoutView = (currentView ?? document.querySelector('.view.active')?.id) === 'view-workout';
+
+  if (!els.workoutBanner) return;
+
+  if (active && !onWorkoutView) {
+    const state = timer.getState();
+    els.workoutBannerPhase.textContent = state.phaseLabel;
+    els.workoutBannerTime.textContent = formatDuration(Math.max(0, state.remainingSeconds));
+    els.workoutBanner.hidden = false;
+  } else {
+    els.workoutBanner.hidden = true;
+  }
 }
 
 function getDefaultWorkout() {
@@ -88,58 +148,116 @@ function ensureWorkoutReady() {
   }
 }
 
-// --- Home ---
-function applyHomeBackground() {
-  const src = loadHomeBackground();
-  if (els.homeBackground && src) {
-    els.homeBackground.style.backgroundImage = `url("${src}")`;
-  }
-}
-
-function renderMusicCard() {
-  const prefs = music.getMusicPrefs();
-  els.musicEnabled.checked = prefs.enabled;
-  els.musicPlaylistUrl.value = prefs.playlistUrl || '';
-
-  if (music.isMusicKitAvailable()) {
-    els.musicStatus.textContent = music.isAppleMusicAuthorized()
-      ? prefs.playlistName
-        ? `Ready: ${prefs.playlistName}`
-        : 'Connected — choose a playlist'
-      : 'Connect to play your library in-app';
-    els.btnMusicConnect.textContent = music.isAppleMusicAuthorized()
-      ? 'Refresh Playlists'
-      : 'Connect Apple Music';
-  } else {
-    els.musicStatus.textContent = prefs.playlistUrl
-      ? 'Opens your playlist when a run starts'
-      : 'Paste a playlist link or open Apple Music';
-    els.btnMusicConnect.textContent = 'Save Playlist Link';
-  }
-}
-
-async function loadMusicPlaylists() {
-  if (!music.isMusicKitAvailable() || !music.isAppleMusicAuthorized()) return;
-
-  const playlists = await music.fetchLibraryPlaylists();
-  els.musicPlaylist.hidden = playlists.length === 0;
-  els.musicPlaylist.innerHTML = '<option value="">Choose a playlist…</option>';
-  const prefs = music.getMusicPrefs();
-
-  playlists.forEach((playlist) => {
-    const option = document.createElement('option');
-    option.value = playlist.id;
-    option.textContent = playlist.name;
-    option.dataset.url = playlist.url;
-    if (playlist.id === prefs.playlistId) option.selected = true;
-    els.musicPlaylist.appendChild(option);
+async function syncToFamily() {
+  await familySync.pushFamilyData({
+    progress,
+    history: loadHistory(),
   });
 }
 
+// --- Family sync ---
+function renderFamilyCard() {
+  const profile = familySync.loadProfile();
+  const partnerName = familySync.getPartnerName();
+
+  document.querySelectorAll('.family-name-btn').forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.name === profile.name);
+  });
+  els.familyCode.value = profile.familyCode || '';
+
+  if (!isFirebaseConfigured()) {
+    els.familyHint.textContent =
+      'Add Firebase config in js/firebase-config.js so you and Mom can sync runs across phones.';
+  } else if (profile.name && profile.familyCode) {
+    els.familyHint.textContent = `Synced as ${familySync.getDisplayName(profile.name)} · code: ${profile.familyCode}`;
+  } else {
+    els.familyHint.textContent = 'Pick your name and share the same family code with Mom.';
+  }
+
+  const showPartner = profile.name && profile.familyCode;
+  els.familySetup.hidden = false;
+  els.familyPartner.hidden = !showPartner;
+
+  if (showPartner) {
+    const youName = familySync.getDisplayName(profile.name);
+    const themName = familySync.getDisplayName(partnerName);
+    els.familyStatus.textContent = `You & ${themName} — keep each other accountable`;
+    els.partnerYouLabel.textContent = youName;
+    els.partnerThemLabel.textContent = themName;
+    els.partnerYouCount.textContent = progress.completedWorkouts.length;
+    els.partnerRunsTitle.textContent = `${themName}'s recent runs`;
+
+    if (partnerData) {
+      els.partnerThemCount.textContent = partnerData.progress?.completedWorkouts?.length ?? 0;
+      renderPartnerRuns(partnerData.history ?? [], themName);
+    } else {
+      els.partnerThemCount.textContent = '—';
+      els.partnerRuns.innerHTML =
+        '<p class="empty-state">Waiting for Mom to sync her runs…</p>';
+    }
+  } else {
+    els.familyStatus.textContent = 'Set up to see each other\'s runs';
+  }
+}
+
+function renderPartnerRuns(runs, partnerName) {
+  els.partnerRuns.innerHTML = '';
+  const recent = runs.slice(0, 3);
+  if (recent.length === 0) {
+    els.partnerRuns.innerHTML = `<p class="empty-state">${partnerName} hasn't logged a run yet.</p>`;
+    return;
+  }
+  recent.forEach((run) => {
+    els.partnerRuns.appendChild(createHistoryCard(run, true, partnerName));
+  });
+}
+
+document.querySelectorAll('.family-name-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    familySync.saveProfile({ name: btn.dataset.name });
+    renderFamilyCard();
+  });
+});
+
+document.getElementById('btn-family-save')?.addEventListener('click', async () => {
+  const code = els.familyCode.value.trim().toLowerCase().replace(/\s+/g, '-');
+  const profile = familySync.loadProfile();
+
+  if (!profile.name) {
+    alert('Pick whether you are Kaylin or Mom first.');
+    return;
+  }
+  if (!code) {
+    alert('Enter a family code you both agree on (e.g. kaylin-mom-run).');
+    return;
+  }
+
+  familySync.saveProfile({ familyCode: code });
+  await syncToFamily();
+  familySync.subscribeToPartner((data) => {
+    partnerData = data;
+    renderFamilyCard();
+  });
+  renderFamilyCard();
+});
+
+// --- Home ---
+function renderMusicCard() {
+  const playlist = music.getPlaylist();
+  const prefs = music.getMusicPrefs();
+
+  els.musicEnabled.checked = prefs.enabled;
+  els.applePlaylistArt.src = playlist.artwork;
+  els.applePlaylistArt.alt = `${playlist.name} playlist artwork`;
+  els.applePlaylistName.textContent = playlist.name;
+  els.applePlaylistSub.textContent = playlist.subtitle;
+  els.applePlaylistLink.href = playlist.url;
+}
+
 function renderHome() {
-  applyHomeBackground();
+  renderFamilyCard();
   renderMusicCard();
-  loadMusicPlaylists();
+
   const next = getNextWorkout(progress.completedWorkouts);
   const completed = progress.completedWorkouts.length;
   const total = PROGRAM.length;
@@ -161,12 +279,14 @@ function renderHome() {
   }
 
   els.workoutList.innerHTML = '';
+  const profile = familySync.loadProfile();
+  const youName = profile.name ? familySync.getDisplayName(profile.name) : null;
   const recent = loadHistory().slice(0, 3);
   if (recent.length === 0) {
     els.workoutList.innerHTML = '<p class="empty-state">No runs yet. Start your first workout!</p>';
   } else {
     recent.forEach((run) => {
-      els.workoutList.appendChild(createHistoryCard(run, true));
+      els.workoutList.appendChild(createHistoryCard(run, true, youName));
     });
   }
 }
@@ -177,69 +297,17 @@ els.nextWorkoutCard?.addEventListener('click', () => {
   if (week && day) startWorkout(week, day);
 });
 
-els.btnChangePhoto?.addEventListener('click', () => {
-  els.homePhotoInput?.click();
-});
-
-els.homePhotoInput?.addEventListener('change', () => {
-  const file = els.homePhotoInput.files?.[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    saveHomeBackground(reader.result);
-    applyHomeBackground();
-    els.homePhotoInput.value = '';
-  };
-  reader.readAsDataURL(file);
-});
-
 els.musicEnabled?.addEventListener('change', () => {
   music.setMusicEnabled(els.musicEnabled.checked);
-  renderMusicCard();
 });
 
-els.musicPlaylistUrl?.addEventListener('change', () => {
-  const url = els.musicPlaylistUrl.value.trim();
-  music.setPlaylist({ id: '', name: 'Custom playlist', url });
-  renderMusicCard();
+els.workoutBanner?.addEventListener('click', () => {
+  showView('workout');
 });
 
-els.btnMusicConnect?.addEventListener('click', async () => {
-  if (!music.isMusicKitAvailable()) {
-    const url = els.musicPlaylistUrl.value.trim();
-    if (url) {
-      music.setPlaylist({ id: '', name: 'Custom playlist', url });
-      renderMusicCard();
-    } else {
-      alert('Paste an Apple Music playlist link, or tap Open Apple Music.');
-    }
-    return;
-  }
-
-  const result = await music.authorizeAppleMusic();
-  if (!result.ok) {
-    alert('Could not connect to Apple Music. Check your developer token in js/music-config.js.');
-    return;
-  }
-
-  await loadMusicPlaylists();
-  renderMusicCard();
-});
-
-els.musicPlaylist?.addEventListener('change', () => {
-  const option = els.musicPlaylist.selectedOptions[0];
-  if (!option?.value) return;
-  music.setPlaylist({
-    id: option.value,
-    name: option.textContent,
-    url: option.dataset.url || '',
-  });
-  renderMusicCard();
-});
-
-els.btnMusicOpen?.addEventListener('click', () => {
-  music.openAppleMusic();
+els.applePlaylistLink?.addEventListener('click', (e) => {
+  e.preventDefault();
+  music.openRunningPlaylist();
 });
 
 // --- Program grid ---
@@ -263,17 +331,19 @@ function renderProgram() {
 // --- History ---
 function renderHistory() {
   const history = loadHistory();
+  const profile = familySync.loadProfile();
+  const youName = profile.name ? familySync.getDisplayName(profile.name) : null;
   els.historyList.innerHTML = '';
   if (history.length === 0) {
     els.historyList.innerHTML = '<p class="empty-state">Your completed runs will appear here.</p>';
     return;
   }
   history.forEach((run) => {
-    els.historyList.appendChild(createHistoryCard(run));
+    els.historyList.appendChild(createHistoryCard(run, false, youName));
   });
 }
 
-function createHistoryCard(run, compact = false) {
+function createHistoryCard(run, compact = false, runnerName = null) {
   const card = document.createElement('div');
   card.className = `history-card${compact ? ' compact' : ''}`;
   const date = new Date(run.completedAt).toLocaleDateString(undefined, {
@@ -283,7 +353,14 @@ function createHistoryCard(run, compact = false) {
     hour: compact ? undefined : 'numeric',
     minute: compact ? undefined : '2-digit',
   });
+  const partialBadge = run.completedFully === false
+    ? '<span class="history-badge">Partial</span>'
+    : '';
+  const runnerBadge = runnerName
+    ? `<div class="runner-badge">${runnerName}</div>`
+    : '';
   card.innerHTML = `
+    ${runnerBadge}
     <div class="history-card-header">
       <strong>${run.label}</strong>
       <span class="history-date">${date}</span>
@@ -292,6 +369,7 @@ function createHistoryCard(run, compact = false) {
       <span>${formatDuration(run.durationSeconds)}</span>
       ${run.distanceMeters > 0 ? `<span>${formatDistance(run.distanceMeters)}</span>` : ''}
     </div>
+    ${partialBadge}
   `;
   return card;
 }
@@ -301,6 +379,7 @@ document.getElementById('btn-clear-history')?.addEventListener('click', () => {
     localStorage.removeItem('c25k-history');
     renderHistory();
     renderHome();
+    syncToFamily();
   }
 });
 
@@ -311,6 +390,7 @@ function startWorkout(week, day, { navigate = true } = {}) {
 
   timer?.stop();
   gps.stop();
+  workoutSavedThisSession = false;
 
   els.workoutTitle.textContent = activeWorkout.label;
   els.phaseLabel.textContent = 'Ready';
@@ -319,12 +399,15 @@ function startWorkout(week, day, { navigate = true } = {}) {
   els.elapsedDisplay.textContent = '0:00';
   els.intervalText.textContent = activeWorkout.description;
   els.distanceDisplay.textContent = '0.00 mi';
+  els.workoutSaveHint.textContent = '';
+  els.workoutSaveHint.className = 'workout-save-hint';
   updateRing(0);
   updateIntervalBar(0);
 
   els.btnStart.disabled = false;
   els.btnStart.textContent = 'Start';
   els.btnPause.disabled = true;
+  els.btnSave.disabled = true;
   els.btnStop.disabled = true;
 
   timer = new WorkoutTimer(activeWorkout, {
@@ -356,21 +439,47 @@ function onTimerStateChange(state) {
   }
 
   const running = timer.isRunning();
+  const inProgress = state.phase !== 'idle' && state.phase !== 'complete';
+  const canSave = inProgress && state.elapsedSeconds > 0 && !workoutSavedThisSession;
+
   els.btnStart.disabled = running;
   els.btnPause.disabled = !running;
   els.btnStop.disabled = state.phase === 'idle';
   els.btnPause.textContent = state.phase === 'paused' ? 'Resume' : 'Pause';
-}
+  els.btnSave.disabled = !canSave && !(state.phase === 'complete' && !workoutSavedThisSession);
 
-function onWorkoutComplete(state) {
-  gps.stop();
-  const id = workoutId(activeWorkout);
-  if (!progress.completedWorkouts.includes(id)) {
-    progress.completedWorkouts.push(id);
-    saveProgress(progress);
+  if (state.phase === 'complete' && !workoutSavedThisSession) {
+    els.workoutSaveHint.textContent = 'Workout finished! Tap Save to log it.';
+    els.workoutSaveHint.className = 'workout-save-hint ready';
+  } else if (canSave) {
+    els.workoutSaveHint.textContent = 'Tap Save anytime to log your progress.';
+    els.workoutSaveHint.className = 'workout-save-hint';
   }
 
+  updateWorkoutBanner();
+}
+
+function onWorkoutComplete() {
+  gps.stop();
+  els.btnStart.disabled = false;
+  els.btnStart.textContent = 'Start Next';
+  els.btnPause.disabled = true;
+  els.btnStop.disabled = false;
+  els.btnSave.disabled = workoutSavedThisSession;
+  onTimerStateChange(timer.getState());
+}
+
+function saveCurrentWorkout() {
+  if (!activeWorkout || !timer) return false;
+
+  const state = timer.getState();
+  if (state.phase === 'idle') return false;
+
+  const isComplete = timer.isComplete();
   const gpsState = gps.getState();
+  const id = workoutId(activeWorkout);
+  const profile = familySync.loadProfile();
+
   saveRun({
     id: crypto.randomUUID(),
     workoutId: id,
@@ -381,22 +490,35 @@ function onWorkoutComplete(state) {
     distanceMeters: gpsState.totalMeters,
     track: gps.getTrack(),
     completedAt: new Date().toISOString(),
+    completedFully: isComplete,
+    runner: profile.name || 'you',
+    runnerName: profile.name ? familySync.getDisplayName(profile.name) : 'You',
   });
 
-  els.btnStart.disabled = false;
-  els.btnStart.textContent = 'Start Next';
-  els.btnPause.disabled = true;
-  els.btnStop.disabled = false;
+  if (isComplete && !progress.completedWorkouts.includes(id)) {
+    progress.completedWorkouts.push(id);
+    saveProgress(progress);
+  }
+
+  workoutSavedThisSession = true;
+  els.btnSave.disabled = true;
+  els.workoutSaveHint.textContent = isComplete
+    ? 'Workout saved! Great job.'
+    : 'Progress saved. Keep going or tap End when done.';
+  els.workoutSaveHint.className = 'workout-save-hint ready';
+
+  syncToFamily();
+  return true;
 }
 
-function updateRing(progress) {
+function updateRing(ringProgress) {
   const circumference = 2 * Math.PI * 90;
-  const offset = circumference * (1 - progress);
+  const offset = circumference * (1 - ringProgress);
   els.ringProgress.style.strokeDashoffset = offset;
 }
 
-function updateIntervalBar(progress) {
-  els.intervalProgress.style.width = `${Math.min(100, progress * 100)}%`;
+function updateIntervalBar(barProgress) {
+  els.intervalProgress.style.width = `${Math.min(100, barProgress * 100)}%`;
 }
 
 els.btnStart?.addEventListener('click', async () => {
@@ -409,7 +531,8 @@ els.btnStart?.addEventListener('click', async () => {
     gps.start((state) => {
       els.distanceDisplay.textContent = formatDistance(state.totalMeters);
     });
-    music.playSavedPlaylist().catch(() => {});
+    requestWakeLock();
+    music.playRunningPlaylist().catch(() => {});
   }
   timer.start();
   onTimerStateChange(timer.getState());
@@ -425,13 +548,31 @@ els.btnPause?.addEventListener('click', () => {
   onTimerStateChange(timer.getState());
 });
 
+els.btnSave?.addEventListener('click', () => {
+  if (saveCurrentWorkout()) {
+    renderHome();
+  }
+});
+
 els.btnStop?.addEventListener('click', () => {
   if (!timer) return;
-  if (timer.isRunning() || timer.getState().phase === 'paused') {
-    if (!confirm('End this workout early? Progress won\'t be saved.')) return;
+  const state = timer.getState();
+
+  if (timer.isRunning() || state.phase === 'paused') {
+    if (!workoutSavedThisSession) {
+      const shouldSave = confirm('Save this workout before ending?');
+      if (shouldSave) {
+        saveCurrentWorkout();
+      } else if (!confirm('Discard this workout?')) {
+        return;
+      }
+    }
   }
+
   timer.stop();
   gps.stop();
+  releaseWakeLock();
+  updateWorkoutBanner();
   showView('home');
 });
 
@@ -448,7 +589,13 @@ if ('serviceWorker' in navigator) {
 }
 
 // --- Init ---
-applyHomeBackground();
+renderMusicCard();
 renderHome();
 showView('home');
-music.initMusicKit().catch(() => {});
+
+familySync.subscribeToPartner((data) => {
+  partnerData = data;
+  renderFamilyCard();
+});
+
+syncToFamily();

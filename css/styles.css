@@ -1,18 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap');
+
 :root {
-  --bg: #0c1222;
-  --surface: #151d2e;
-  --surface-2: #1c2740;
-  --text: #f0f4f8;
-  --text-muted: #8b9cb3;
-  --accent: #14b8a6;
-  --accent-dark: #0f766e;
-  --run: #f97316;
-  --walk: #38bdf8;
-  --danger: #ef4444;
-  --success: #22c55e;
-  --radius: 16px;
+  --bg: #f4fbe8;
+  --bg-warm: #fff9e6;
+  --surface: #fffef8;
+  --surface-2: #e8f5dc;
+  --surface-3: #dceec8;
+  --text: #3a4a32;
+  --text-muted: #6b7d62;
+  --accent: #8bc48a;
+  --accent-dark: #6aad69;
+  --accent-yellow: #f5e6a3;
+  --accent-yellow-dark: #e8d47a;
+  --run: #e8a04a;
+  --walk: #7eb8d4;
+  --danger: #e07070;
+  --success: #6db86d;
+  --shadow: rgba(106, 140, 90, 0.12);
+  --radius: 18px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 *,
@@ -26,14 +33,15 @@
 html,
 body {
   height: 100%;
-  background: var(--bg);
+  background: linear-gradient(165deg, var(--bg-warm) 0%, var(--bg) 45%, #eef8e4 100%);
+  background-attachment: fixed;
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
 }
 
 body {
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 #app {
@@ -51,15 +59,19 @@ body {
 }
 
 .app-header h1 {
-  font-size: 1.5rem;
+  font-family: 'Quicksand', 'Nunito', sans-serif;
+  font-size: 1.45rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.25;
 }
 
 .tagline {
   color: var(--text-muted);
-  font-size: 0.85rem;
-  margin-top: 0.15rem;
+  font-size: 0.88rem;
+  margin-top: 0.2rem;
+  font-weight: 600;
 }
 
 /* Main */
@@ -77,165 +89,12 @@ body {
   display: block;
 }
 
-/* Home background photo */
-#view-home {
-  position: relative;
-  min-height: 100%;
-}
-
-.home-background {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  opacity: 0.42;
-  z-index: 0;
-  border-radius: var(--radius);
-  pointer-events: none;
-}
-
-.home-background::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(12, 18, 34, 0.55) 0%,
-    rgba(12, 18, 34, 0.75) 55%,
-    rgba(12, 18, 34, 0.92) 100%
-  );
-  border-radius: inherit;
-}
-
-.home-content {
-  position: relative;
-  z-index: 1;
-}
-
-.home-photo-btn {
-  display: block;
-  margin: 0 0 0.75rem auto;
-  background: rgba(21, 29, 46, 0.85);
-  border: 1px solid var(--surface-2);
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.home-photo-btn:active {
-  transform: scale(0.97);
-}
-
-/* Apple Music card */
-.music-card {
-  background: rgba(21, 29, 46, 0.92);
-  border: 1px solid var(--surface-2);
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin-bottom: 1rem;
-  backdrop-filter: blur(8px);
-}
-
-.music-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.music-card-icon {
-  font-size: 1.5rem;
-}
-
-.music-card-header strong {
-  display: block;
-  font-size: 0.95rem;
-}
-
-.music-card-sub {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  margin-top: 0.1rem;
-}
-
-.music-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.music-playlist-select,
-.music-url-input {
-  width: 100%;
-  margin-top: 0.65rem;
-  background: var(--surface-2);
-  border: 1px solid transparent;
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 0.85rem;
-  padding: 0.55rem 0.75rem;
-}
-
-.music-url-input::placeholder {
-  color: var(--text-muted);
-}
-
-.btn-small {
-  padding: 0.45rem 0.85rem;
-  font-size: 0.8rem;
-}
-
-.toggle {
-  margin-left: auto;
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 26px;
-  flex-shrink: 0;
-}
-
-.toggle input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  inset: 0;
-  background: var(--surface-2);
-  border-radius: 26px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.toggle-slider::before {
-  content: '';
-  position: absolute;
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background: white;
-  border-radius: 50%;
-  transition: transform 0.2s;
-}
-
-.toggle input:checked + .toggle-slider {
-  background: var(--accent);
-}
-
-.toggle input:checked + .toggle-slider::before {
-  transform: translateX(18px);
-}
-
 .section-title {
+  font-family: 'Quicksand', 'Nunito', sans-serif;
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0.75rem;
+  color: var(--text);
 }
 
 .section-subtitle {
@@ -257,14 +116,354 @@ body {
 }
 
 .stats-bar {
-  background: var(--surface);
+  background: linear-gradient(135deg, var(--accent-yellow), #fff6cc);
+  border: 1px solid rgba(232, 212, 122, 0.5);
   border-radius: var(--radius);
   padding: 0.75rem 1rem;
   text-align: center;
-  font-size: 0.9rem;
-  color: var(--accent);
-  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text);
+  font-weight: 700;
   margin-bottom: 1rem;
+  box-shadow: 0 4px 14px var(--shadow);
+}
+
+/* Family accountability */
+.family-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 14px var(--shadow);
+}
+
+.family-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.family-card-icon {
+  font-size: 1.4rem;
+}
+
+.family-card-header strong {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1rem;
+}
+
+.family-card-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.family-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.family-setup-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.family-name-btn {
+  flex: 1;
+  padding: 0.55rem;
+  border-radius: 12px;
+  border: 2px solid var(--surface-3);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.family-name-btn.selected {
+  border-color: var(--accent-dark);
+  background: var(--accent-yellow);
+}
+
+.family-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-3);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 0.88rem;
+  padding: 0.55rem 0.75rem;
+  font-family: 'Nunito', sans-serif;
+}
+
+.family-input::placeholder {
+  color: var(--text-muted);
+}
+
+.partner-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.partner-stat {
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  text-align: center;
+}
+
+.partner-stat-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.partner-stat-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent-dark);
+  margin-top: 0.15rem;
+}
+
+.partner-runs-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 0.45rem;
+}
+
+.history-card.partner {
+  border-left: 3px solid var(--accent-yellow-dark);
+}
+
+.history-card.you {
+  border-left: 3px solid var(--accent-dark);
+}
+
+.history-card .runner-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-dark);
+  margin-bottom: 0.2rem;
+}
+
+.family-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Apple Music playlist card */
+.music-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--radius);
+  padding: 0.85rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 14px var(--shadow);
+}
+
+.music-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  padding: 0 0.15rem;
+}
+
+.music-auto-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.apple-playlist-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  background: linear-gradient(135deg, #1a1a1e 0%, #2d2d34 100%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.apple-playlist-link:active {
+  transform: scale(0.98);
+}
+
+.apple-playlist-art {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.apple-playlist-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.apple-playlist-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fa2d48;
+}
+
+.apple-music-logo {
+  width: 14px;
+  height: 14px;
+}
+
+.apple-playlist-name {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apple-playlist-sub {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.apple-playlist-play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fa2d48;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  padding-left: 2px;
+  box-shadow: 0 2px 8px rgba(250, 45, 72, 0.45);
+}
+
+/* Workout in-progress banner */
+.workout-banner {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(3.6rem + var(--safe-bottom));
+  width: calc(100% - 2rem);
+  max-width: 448px;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--accent-dark);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent-yellow), #fff8d6);
+  box-shadow: 0 4px 20px var(--shadow);
+  cursor: pointer;
+  z-index: 99;
+  font-family: 'Nunito', sans-serif;
+  text-align: left;
+}
+
+.workout-banner-phase {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-dark);
+  white-space: nowrap;
+}
+
+.workout-banner-time {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.workout-banner-cta {
+  flex: 1;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: right;
+}
+
+.btn-small {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-3);
+  border-radius: 26px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.toggle input:checked + .toggle-slider {
+  background: var(--accent-dark);
+}
+
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(18px);
 }
 
 /* Next workout card */
@@ -276,10 +475,12 @@ body {
   border: none;
   border-radius: var(--radius);
   padding: 1.25rem;
-  color: white;
+  color: #fffef5;
   cursor: pointer;
   margin-bottom: 1.5rem;
   transition: transform 0.15s;
+  box-shadow: 0 6px 20px var(--shadow);
+  font-family: 'Nunito', sans-serif;
 }
 
 .next-workout-card:active {
@@ -291,11 +492,13 @@ body {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  opacity: 0.85;
+  opacity: 0.9;
+  font-weight: 700;
 }
 
 .card-title {
   display: block;
+  font-family: 'Quicksand', sans-serif;
   font-size: 1.35rem;
   font-weight: 700;
   margin: 0.25rem 0;
@@ -304,21 +507,21 @@ body {
 .card-desc {
   display: block;
   font-size: 0.9rem;
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .card-duration {
   display: block;
   font-size: 0.85rem;
   margin-top: 0.5rem;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .card-cta {
   display: block;
   margin-top: 0.75rem;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Cards */
@@ -330,8 +533,10 @@ body {
 
 .history-card {
   background: var(--surface);
+  border: 1px solid var(--surface-3);
   border-radius: 12px;
   padding: 0.85rem 1rem;
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .history-card.compact {
@@ -359,6 +564,18 @@ body {
   color: var(--text-muted);
 }
 
+.history-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--accent-yellow);
+  color: var(--text);
+  margin-top: 0.35rem;
+}
+
 .empty-state {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -378,26 +595,30 @@ body {
   align-items: flex-start;
   text-align: left;
   background: var(--surface);
-  border: 1px solid transparent;
+  border: 1px solid var(--surface-3);
   border-radius: 12px;
   padding: 0.85rem 1rem;
   color: var(--text);
   cursor: pointer;
   position: relative;
   transition: border-color 0.15s;
+  font-family: 'Nunito', sans-serif;
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .program-card:active {
-  border-color: var(--accent);
+  border-color: var(--accent-dark);
 }
 
 .program-card.completed {
-  border-color: rgba(34, 197, 94, 0.3);
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--surface), var(--surface-2));
 }
 
 .program-card-week {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.95rem;
+  font-family: 'Quicksand', sans-serif;
 }
 
 .program-card-desc {
@@ -418,8 +639,23 @@ body {
 /* Workout view */
 .workout-title {
   text-align: center;
-  font-size: 1.1rem;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
   margin-bottom: 1rem;
+}
+
+.workout-save-hint {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  min-height: 1.25rem;
+}
+
+.workout-save-hint.ready {
+  color: var(--accent-dark);
+  font-weight: 700;
 }
 
 .timer-ring-container {
@@ -437,13 +673,13 @@ body {
 
 .ring-bg {
   fill: none;
-  stroke: var(--surface-2);
+  stroke: var(--surface-3);
   stroke-width: 10;
 }
 
 .ring-progress {
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--accent-dark);
   stroke-width: 10;
   stroke-linecap: round;
   stroke-dasharray: 565.48;
@@ -462,10 +698,11 @@ body {
 
 .phase-label {
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 0.25rem;
+  font-family: 'Quicksand', sans-serif;
 }
 
 .phase-label.ready { color: var(--text-muted); }
@@ -477,6 +714,7 @@ body {
 .phase-label.paused { color: var(--text-muted); }
 
 .timer-display {
+  font-family: 'Quicksand', sans-serif;
   font-size: 3rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -492,7 +730,7 @@ body {
 
 .interval-bar-track {
   height: 6px;
-  background: var(--surface-2);
+  background: var(--surface-3);
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -501,7 +739,7 @@ body {
 .interval-bar-fill {
   height: 100%;
   width: 0%;
-  background: var(--accent);
+  background: linear-gradient(90deg, var(--accent), var(--accent-yellow-dark));
   border-radius: 3px;
   transition: width 0.3s linear;
 }
@@ -530,12 +768,14 @@ body {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-weight: 700;
 }
 
 .live-stat-value {
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  font-family: 'Quicksand', sans-serif;
 }
 
 /* Buttons */
@@ -543,7 +783,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   flex-wrap: wrap;
 }
 
@@ -551,10 +791,11 @@ body {
   border: none;
   border-radius: 12px;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   padding: 0.7rem 1.25rem;
   transition: opacity 0.15s, transform 0.1s;
+  font-family: 'Nunito', sans-serif;
 }
 
 .btn:active:not(:disabled) {
@@ -567,13 +808,21 @@ body {
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: #042f2e;
+  background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+  color: #fffef8;
+  box-shadow: 0 3px 10px var(--shadow);
 }
 
 .btn-secondary {
   background: var(--surface-2);
   color: var(--text);
+  border: 1px solid var(--surface-3);
+}
+
+.btn-save {
+  background: linear-gradient(135deg, var(--accent-yellow-dark), var(--accent-yellow));
+  color: var(--text);
+  border: 1px solid rgba(232, 212, 122, 0.6);
 }
 
 .btn-danger {
@@ -592,6 +841,8 @@ body {
   font-size: 1.25rem;
   padding: 0.6rem 0.75rem;
   border-radius: 50%;
+  border: 1px solid var(--surface-3);
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .btn-icon.muted {
@@ -615,9 +866,10 @@ body {
   max-width: 480px;
   display: flex;
   background: var(--surface);
-  border-top: 1px solid var(--surface-2);
+  border-top: 1px solid var(--surface-3);
   padding-bottom: var(--safe-bottom);
   z-index: 100;
+  box-shadow: 0 -4px 16px var(--shadow);
 }
 
 .nav-btn {
@@ -632,10 +884,12 @@ body {
   color: var(--text-muted);
   font-size: 0.7rem;
   cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
 }
 
 .nav-btn.active {
-  color: var(--accent);
+  color: var(--accent-dark);
 }
 
 .nav-icon {

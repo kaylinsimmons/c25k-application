@@ -21,6 +21,10 @@ export class WorkoutTimer {
     this.tickInterval = null;
     this.halfwayAnnounced = false;
     this._pausedPhase = null;
+    this._phaseEndTime = null;
+    this._elapsedSnapshot = 0;
+    this._runningSince = null;
+    this._onVisibility = () => this._syncFromClock();
   }
 
   getState() {
@@ -74,12 +78,27 @@ export class WorkoutTimer {
     return Math.min(1, this.elapsedSeconds / total);
   }
 
+  _getElapsedSeconds() {
+    if (!this._runningSince) return this._elapsedSnapshot;
+    return this._elapsedSnapshot + Math.floor((Date.now() - this._runningSince) / 1000);
+  }
+
+  _setPhaseEndFromRemaining() {
+    if (this.remainingSeconds > 0 && this.isRunning()) {
+      this._phaseEndTime = Date.now() + this.remainingSeconds * 1000;
+    } else {
+      this._phaseEndTime = null;
+    }
+  }
+
   start() {
     if (this.phase !== PHASE.IDLE && this.phase !== PHASE.PAUSED) return;
     audio.resumeAudioContext();
 
     if (this.phase === PHASE.PAUSED) {
       this.phase = this._pausedPhase;
+      this._runningSince = Date.now();
+      this._setPhaseEndFromRemaining();
       this._startTicking();
       this.callbacks.onStateChange?.(this.getState());
       return;
@@ -89,7 +108,10 @@ export class WorkoutTimer {
     this.remainingSeconds = WARMUP_SECONDS;
     this.intervalIndex = 0;
     this.elapsedSeconds = 0;
+    this._elapsedSnapshot = 0;
+    this._runningSince = Date.now();
     this.halfwayAnnounced = false;
+    this._setPhaseEndFromRemaining();
     audio.announceWarmup();
     this._startTicking();
     this.callbacks.onStateChange?.(this.getState());
@@ -99,8 +121,12 @@ export class WorkoutTimer {
     if (this.phase === PHASE.IDLE || this.phase === PHASE.COMPLETE || this.phase === PHASE.PAUSED) {
       return;
     }
+    this._syncFromClock();
     this._pausedPhase = this.phase;
     this.phase = PHASE.PAUSED;
+    this._elapsedSnapshot = this.elapsedSeconds;
+    this._runningSince = null;
+    this._phaseEndTime = null;
     this._stopTicking();
     this.callbacks.onStateChange?.(this.getState());
   }
@@ -111,12 +137,16 @@ export class WorkoutTimer {
     this.remainingSeconds = 0;
     this.intervalIndex = 0;
     this.elapsedSeconds = 0;
+    this._elapsedSnapshot = 0;
+    this._runningSince = null;
+    this._phaseEndTime = null;
     this.callbacks.onStateChange?.(this.getState());
   }
 
   _startTicking() {
     this._stopTicking();
-    this.tickInterval = setInterval(() => this._tick(), 1000);
+    this.tickInterval = setInterval(() => this._syncFromClock(), 250);
+    document.addEventListener('visibilitychange', this._onVisibility);
   }
 
   _stopTicking() {
@@ -124,28 +154,42 @@ export class WorkoutTimer {
       clearInterval(this.tickInterval);
       this.tickInterval = null;
     }
+    document.removeEventListener('visibilitychange', this._onVisibility);
   }
 
-  _tick() {
-    this.elapsedSeconds += 1;
-    this.remainingSeconds -= 1;
+  _syncFromClock() {
+    if (!this.isRunning() || !this._phaseEndTime) return;
 
-    const interval = this.getCurrentInterval();
-    if (interval && this.phase === PHASE.INTERVAL) {
-      const halfway = Math.floor(interval.seconds / 2);
-      const elapsedInInterval = interval.seconds - this.remainingSeconds;
-      if (!this.halfwayAnnounced && elapsedInInterval === halfway && halfway > 10) {
-        this.halfwayAnnounced = true;
-        audio.announceHalfway();
+    while (this._phaseEndTime && Date.now() >= this._phaseEndTime) {
+      this.elapsedSeconds = this._getElapsedSeconds();
+      this.remainingSeconds = 0;
+      this._advancePhase();
+      if (this.isRunning() && this.remainingSeconds > 0) {
+        this._phaseEndTime = Date.now() + this.remainingSeconds * 1000;
+      } else {
+        this._phaseEndTime = null;
+        break;
       }
     }
 
-    if (this.remainingSeconds <= 3 && this.remainingSeconds > 0) {
-      audio.announceCountdown();
-    }
+    if (this.isRunning() && this._phaseEndTime) {
+      const prevRemaining = this.remainingSeconds;
+      this.remainingSeconds = Math.max(0, Math.ceil((this._phaseEndTime - Date.now()) / 1000));
+      this.elapsedSeconds = this._getElapsedSeconds();
 
-    if (this.remainingSeconds <= 0) {
-      this._advancePhase();
+      const interval = this.getCurrentInterval();
+      if (interval && this.phase === PHASE.INTERVAL) {
+        const halfway = Math.floor(interval.seconds / 2);
+        const elapsedInInterval = interval.seconds - this.remainingSeconds;
+        if (!this.halfwayAnnounced && elapsedInInterval >= halfway && halfway > 10) {
+          this.halfwayAnnounced = true;
+          audio.announceHalfway();
+        }
+      }
+
+      if (this.remainingSeconds <= 3 && this.remainingSeconds > 0 && prevRemaining !== this.remainingSeconds) {
+        audio.announceCountdown();
+      }
     }
 
     this.callbacks.onStateChange?.(this.getState());
@@ -183,6 +227,9 @@ export class WorkoutTimer {
     if (this.phase === PHASE.COOLDOWN) {
       this.phase = PHASE.COMPLETE;
       this.remainingSeconds = 0;
+      this._elapsedSnapshot = this._getElapsedSeconds();
+      this._runningSince = null;
+      this._phaseEndTime = null;
       this._stopTicking();
       audio.announceComplete();
       this.callbacks.onComplete?.(this.getState());
@@ -195,6 +242,14 @@ export class WorkoutTimer {
 
   isComplete() {
     return this.phase === PHASE.COMPLETE;
+  }
+
+  isActive() {
+    return this.phase !== PHASE.IDLE;
+  }
+
+  syncFromClock() {
+    this._syncFromClock();
   }
 }
 
