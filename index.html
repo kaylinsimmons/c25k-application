@@ -6,23 +6,58 @@
   <meta name="theme-color" content="#0f766e" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="description" content="Couch to 5K run tracker with timed intervals, audio cues, and GPS" />
+  <meta name="description" content="Kaylin and Mom's Couch to 5K run tracker with timed intervals, audio cues, GPS, and Apple Music" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="css/styles.css" />
-  <title>C25K Tracker</title>
+  <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
+  <title>Kaylin and Moms Running App</title>
 </head>
 <body>
   <div id="app">
     <header class="app-header">
-      <h1>C25K Tracker</h1>
-      <p class="tagline">Couch to 5K</p>
+      <h1>Kaylin and Moms Running App</h1>
+      <p class="tagline">Kaylin &amp; Mom · Couch to 5K</p>
     </header>
 
     <main class="app-main">
       <!-- Home -->
       <section id="view-home" class="view active">
+        <div class="home-background" id="home-background" aria-hidden="true"></div>
+        <div class="home-content">
+        <button type="button" class="home-photo-btn" id="btn-change-photo" title="Change home photo">
+          📷 Change photo
+        </button>
+        <input type="file" id="home-photo-input" accept="image/*" hidden />
+
         <div class="stats-bar" id="progress-summary">0 of 27 workouts complete</div>
+
+        <div class="music-card" id="music-card">
+          <div class="music-card-header">
+            <span class="music-card-icon">🎵</span>
+            <div>
+              <strong>Apple Music</strong>
+              <p class="music-card-sub" id="music-status">Play your music during runs</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="music-enabled" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="music-card-actions" id="music-actions">
+            <button type="button" class="btn btn-secondary btn-small" id="btn-music-connect">Connect Apple Music</button>
+            <button type="button" class="btn btn-text btn-small" id="btn-music-open">Open Apple Music</button>
+          </div>
+          <select class="music-playlist-select" id="music-playlist" hidden>
+            <option value="">Choose a playlist…</option>
+          </select>
+          <input
+            type="url"
+            class="music-url-input"
+            id="music-playlist-url"
+            placeholder="Or paste an Apple Music playlist link"
+          />
+        </div>
 
         <button class="next-workout-card" id="next-workout-card">
           <span class="card-label">Up Next</span>
@@ -34,6 +69,7 @@
 
         <h2 class="section-title">Recent Runs</h2>
         <div id="workout-list" class="card-list"></div>
+        </div>
       </section>
 
       <!-- Active Workout -->

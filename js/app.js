@@ -5,10 +5,11 @@ import {
   workoutId,
   getNextWorkout,
 } from './program.js';
-import { loadProgress, saveProgress, loadHistory, saveRun } from './storage.js';
+import { loadProgress, saveProgress, loadHistory, saveRun, loadHomeBackground, saveHomeBackground } from './storage.js';
 import { WorkoutTimer } from './timer.js';
 import { GpsTracker, formatDistance } from './gps.js';
 import * as audio from './audio.js';
+import * as music from './music.js';
 
 // --- DOM refs ---
 const views = {
@@ -39,6 +40,15 @@ const els = {
   btnStop: document.getElementById('btn-stop'),
   btnAudio: document.getElementById('btn-audio'),
   ringProgress: document.getElementById('ring-progress'),
+  homeBackground: document.getElementById('home-background'),
+  btnChangePhoto: document.getElementById('btn-change-photo'),
+  homePhotoInput: document.getElementById('home-photo-input'),
+  musicEnabled: document.getElementById('music-enabled'),
+  musicStatus: document.getElementById('music-status'),
+  btnMusicConnect: document.getElementById('btn-music-connect'),
+  btnMusicOpen: document.getElementById('btn-music-open'),
+  musicPlaylist: document.getElementById('music-playlist'),
+  musicPlaylistUrl: document.getElementById('music-playlist-url'),
 };
 
 let progress = loadProgress();
@@ -79,7 +89,57 @@ function ensureWorkoutReady() {
 }
 
 // --- Home ---
+function applyHomeBackground() {
+  const src = loadHomeBackground();
+  if (els.homeBackground && src) {
+    els.homeBackground.style.backgroundImage = `url("${src}")`;
+  }
+}
+
+function renderMusicCard() {
+  const prefs = music.getMusicPrefs();
+  els.musicEnabled.checked = prefs.enabled;
+  els.musicPlaylistUrl.value = prefs.playlistUrl || '';
+
+  if (music.isMusicKitAvailable()) {
+    els.musicStatus.textContent = music.isAppleMusicAuthorized()
+      ? prefs.playlistName
+        ? `Ready: ${prefs.playlistName}`
+        : 'Connected — choose a playlist'
+      : 'Connect to play your library in-app';
+    els.btnMusicConnect.textContent = music.isAppleMusicAuthorized()
+      ? 'Refresh Playlists'
+      : 'Connect Apple Music';
+  } else {
+    els.musicStatus.textContent = prefs.playlistUrl
+      ? 'Opens your playlist when a run starts'
+      : 'Paste a playlist link or open Apple Music';
+    els.btnMusicConnect.textContent = 'Save Playlist Link';
+  }
+}
+
+async function loadMusicPlaylists() {
+  if (!music.isMusicKitAvailable() || !music.isAppleMusicAuthorized()) return;
+
+  const playlists = await music.fetchLibraryPlaylists();
+  els.musicPlaylist.hidden = playlists.length === 0;
+  els.musicPlaylist.innerHTML = '<option value="">Choose a playlist…</option>';
+  const prefs = music.getMusicPrefs();
+
+  playlists.forEach((playlist) => {
+    const option = document.createElement('option');
+    option.value = playlist.id;
+    option.textContent = playlist.name;
+    option.dataset.url = playlist.url;
+    if (playlist.id === prefs.playlistId) option.selected = true;
+    els.musicPlaylist.appendChild(option);
+  });
+}
+
 function renderHome() {
+  applyHomeBackground();
+  renderMusicCard();
+  loadMusicPlaylists();
   const next = getNextWorkout(progress.completedWorkouts);
   const completed = progress.completedWorkouts.length;
   const total = PROGRAM.length;
@@ -115,6 +175,71 @@ els.nextWorkoutCard?.addEventListener('click', () => {
   const week = parseInt(els.nextWorkoutCard.dataset.week, 10);
   const day = parseInt(els.nextWorkoutCard.dataset.day, 10);
   if (week && day) startWorkout(week, day);
+});
+
+els.btnChangePhoto?.addEventListener('click', () => {
+  els.homePhotoInput?.click();
+});
+
+els.homePhotoInput?.addEventListener('change', () => {
+  const file = els.homePhotoInput.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    saveHomeBackground(reader.result);
+    applyHomeBackground();
+    els.homePhotoInput.value = '';
+  };
+  reader.readAsDataURL(file);
+});
+
+els.musicEnabled?.addEventListener('change', () => {
+  music.setMusicEnabled(els.musicEnabled.checked);
+  renderMusicCard();
+});
+
+els.musicPlaylistUrl?.addEventListener('change', () => {
+  const url = els.musicPlaylistUrl.value.trim();
+  music.setPlaylist({ id: '', name: 'Custom playlist', url });
+  renderMusicCard();
+});
+
+els.btnMusicConnect?.addEventListener('click', async () => {
+  if (!music.isMusicKitAvailable()) {
+    const url = els.musicPlaylistUrl.value.trim();
+    if (url) {
+      music.setPlaylist({ id: '', name: 'Custom playlist', url });
+      renderMusicCard();
+    } else {
+      alert('Paste an Apple Music playlist link, or tap Open Apple Music.');
+    }
+    return;
+  }
+
+  const result = await music.authorizeAppleMusic();
+  if (!result.ok) {
+    alert('Could not connect to Apple Music. Check your developer token in js/music-config.js.');
+    return;
+  }
+
+  await loadMusicPlaylists();
+  renderMusicCard();
+});
+
+els.musicPlaylist?.addEventListener('change', () => {
+  const option = els.musicPlaylist.selectedOptions[0];
+  if (!option?.value) return;
+  music.setPlaylist({
+    id: option.value,
+    name: option.textContent,
+    url: option.dataset.url || '',
+  });
+  renderMusicCard();
+});
+
+els.btnMusicOpen?.addEventListener('click', () => {
+  music.openAppleMusic();
 });
 
 // --- Program grid ---
@@ -274,7 +399,7 @@ function updateIntervalBar(progress) {
   els.intervalProgress.style.width = `${Math.min(100, progress * 100)}%`;
 }
 
-els.btnStart?.addEventListener('click', () => {
+els.btnStart?.addEventListener('click', async () => {
   if (!timer || timer.isComplete()) {
     ensureWorkoutReady();
   }
@@ -284,6 +409,7 @@ els.btnStart?.addEventListener('click', () => {
     gps.start((state) => {
       els.distanceDisplay.textContent = formatDistance(state.totalMeters);
     });
+    music.playSavedPlaylist().catch(() => {});
   }
   timer.start();
   onTimerStateChange(timer.getState());
@@ -322,5 +448,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // --- Init ---
+applyHomeBackground();
 renderHome();
 showView('home');
+music.initMusicKit().catch(() => {});

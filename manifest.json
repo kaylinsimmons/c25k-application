@@ -1,7 +1,7 @@
 {
-  "name": "C25K Tracker",
-  "short_name": "C25K",
-  "description": "Couch to 5K run tracker with timed intervals, audio cues, and GPS",
+  "name": "Kaylin and Moms Running App",
+  "short_name": "Kaylin & Mom",
+  "description": "Kaylin and Mom's Couch to 5K run tracker with timed intervals, audio cues, GPS, and Apple Music",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0c1222",

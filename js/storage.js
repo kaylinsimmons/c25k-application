@@ -1,5 +1,19 @@
 const PROGRESS_KEY = 'c25k-progress';
 const HISTORY_KEY = 'c25k-history';
+const HOME_BG_KEY = 'c25k-home-background';
+const DEFAULT_HOME_BG = './images/kaylin-and-mom.png';
+
+export function loadHomeBackground() {
+  return localStorage.getItem(HOME_BG_KEY) || DEFAULT_HOME_BG;
+}
+
+export function saveHomeBackground(dataUrl) {
+  localStorage.setItem(HOME_BG_KEY, dataUrl);
+}
+
+export function clearHomeBackground() {
+  localStorage.removeItem(HOME_BG_KEY);
+}
 
 export function loadProgress() {
   try {

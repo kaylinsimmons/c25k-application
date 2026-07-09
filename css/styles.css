@@ -77,6 +77,161 @@ body {
   display: block;
 }
 
+/* Home background photo */
+#view-home {
+  position: relative;
+  min-height: 100%;
+}
+
+.home-background {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: 0.42;
+  z-index: 0;
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.home-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 18, 34, 0.55) 0%,
+    rgba(12, 18, 34, 0.75) 55%,
+    rgba(12, 18, 34, 0.92) 100%
+  );
+  border-radius: inherit;
+}
+
+.home-content {
+  position: relative;
+  z-index: 1;
+}
+
+.home-photo-btn {
+  display: block;
+  margin: 0 0 0.75rem auto;
+  background: rgba(21, 29, 46, 0.85);
+  border: 1px solid var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.home-photo-btn:active {
+  transform: scale(0.97);
+}
+
+/* Apple Music card */
+.music-card {
+  background: rgba(21, 29, 46, 0.92);
+  border: 1px solid var(--surface-2);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(8px);
+}
+
+.music-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.music-card-icon {
+  font-size: 1.5rem;
+}
+
+.music-card-header strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.music-card-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.music-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.music-playlist-select,
+.music-url-input {
+  width: 100%;
+  margin-top: 0.65rem;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.music-url-input::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-small {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+.toggle {
+  margin-left: auto;
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-2);
+  border-radius: 26px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .toggle-slider {
+  background: var(--accent);
+}
+
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+}
+
 .section-title {
   font-size: 1.1rem;
   font-weight: 600;

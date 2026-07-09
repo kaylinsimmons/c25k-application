@@ -1,4 +1,4 @@
-const CACHE = 'c25k-v2';
+const CACHE = 'c25k-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,10 @@ const ASSETS = [
   './js/storage.js',
   './js/audio.js',
   './js/gps.js',
+  './js/music.js',
+  './js/music-config.js',
   './manifest.json',
+  './images/kaylin-and-mom.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
 ];
