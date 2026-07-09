@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Couch to 5K run tracker with timed intervals, audio cues, and GPS" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <title>C25K Tracker</title>
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <h1>C25K Tracker</h1>
+      <p class="tagline">Couch to 5K</p>
+    </header>
+
+    <main class="app-main">
+      <!-- Home -->
+      <section id="view-home" class="view active">
+        <div class="stats-bar" id="progress-summary">0 of 27 workouts complete</div>
+
+        <button class="next-workout-card" id="next-workout-card">
+          <span class="card-label">Up Next</span>
+          <span class="card-title" id="next-workout-label">Week 1 · Day 1</span>
+          <span class="card-desc" id="next-workout-desc">60s run / 90s walk × 8</span>
+          <span class="card-duration" id="next-workout-duration">~30:00</span>
+          <span class="card-cta">Tap to start →</span>
+        </button>
+
+        <h2 class="section-title">Recent Runs</h2>
+        <div id="workout-list" class="card-list"></div>
+      </section>
+
+      <!-- Active Workout -->
+      <section id="view-workout" class="view">
+        <h2 id="workout-title" class="workout-title">Week 1 · Day 1</h2>
+
+        <div class="timer-ring-container">
+          <svg class="timer-ring" viewBox="0 0 200 200">
+            <circle class="ring-bg" cx="100" cy="100" r="90" />
+            <circle class="ring-progress" id="ring-progress" cx="100" cy="100" r="90" />
+          </svg>
+          <div class="timer-center">
+            <div class="phase-label ready" id="phase-label">Ready</div>
+            <div class="timer-display" id="timer-display">30:00</div>
+            <div class="elapsed-label">elapsed <span id="elapsed-display">0:00</span></div>
+          </div>
+        </div>
+
+        <div class="interval-bar-track">
+          <div class="interval-bar-fill" id="interval-progress"></div>
+        </div>
+        <p class="interval-text" id="interval-text">Warm up — walk at an easy pace</p>
+
+        <div class="live-stats">
+          <div class="live-stat">
+            <span class="live-stat-label">Distance</span>
+            <span class="live-stat-value" id="distance-display">0.00 mi</span>
+          </div>
+        </div>
+
+        <div class="workout-controls">
+          <button class="btn btn-icon" id="btn-audio" title="Toggle audio">🔊</button>
+          <button class="btn btn-primary btn-large" id="btn-start">Start</button>
+          <button class="btn btn-secondary" id="btn-pause" disabled>Pause</button>
+          <button class="btn btn-danger" id="btn-stop" disabled>End</button>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section id="view-history" class="view">
+        <div class="view-header-row">
+          <h2 class="section-title">Run History</h2>
+          <button class="btn btn-text" id="btn-clear-history">Clear</button>
+        </div>
+        <div id="history-list" class="card-list"></div>
+      </section>
+
+      <!-- Program -->
+      <section id="view-program" class="view">
+        <h2 class="section-title">Full Program</h2>
+        <p class="section-subtitle">9 weeks · 3 runs per week</p>
+        <div id="program-grid" class="program-grid"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-nav="home">
+        <span class="nav-icon">🏠</span>
+        <span>Home</span>
+      </button>
+      <button class="nav-btn" data-nav="workout">
+        <span class="nav-icon">▶️</span>
+        <span>Run</span>
+      </button>
+      <button class="nav-btn" data-nav="history">
+        <span class="nav-icon">📊</span>
+        <span>History</span>
+      </button>
+      <button class="nav-btn" data-nav="program">
+        <span class="nav-icon">📅</span>
+        <span>Program</span>
+      </button>
+    </nav>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
