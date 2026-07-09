@@ -88,3 +88,4 @@ All data stays on your device in `localStorage`:
 ## License
 
 Personal use — build and modify freely.
+# c25k-application
